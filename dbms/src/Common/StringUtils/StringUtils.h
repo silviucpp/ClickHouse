@@ -96,7 +96,7 @@ inline bool isAlphaNumericASCII(char c)
 inline bool isWordCharASCII(char c)
 {
     return isAlphaNumericASCII(c)
-        || c == '_';
+        || c == '_' || c == '#';
 }
 
 inline bool isValidIdentifierBegin(char c)
