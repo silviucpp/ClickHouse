@@ -1,7 +1,9 @@
 # Set standard, system and compiler libraries explicitly.
 # This is intended for more control of what we are linking.
 
+IF(NOT APPLE)
 set (DEFAULT_LIBS "-nodefaultlibs")
+ENDIF()
 
 if (OS_LINUX)
     # We need builtins from Clang's RT even without libcxx - for ubsan+int128.
@@ -27,18 +29,32 @@ add_library(global-libs INTERFACE)
 # Unfortunately '-pthread' doesn't work with '-nodefaultlibs'.
 # Just make sure we have pthreads at all.
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+
+IF(APPLE)
+    set(CMAKE_THREAD_LIBS_INIT "-lpthread")
+    set(CMAKE_HAVE_THREADS_LIBRARY 1)
+    set(CMAKE_USE_WIN32_THREADS_INIT 0)
+    set(CMAKE_USE_PTHREADS_INIT 1)
+ELSE()
 find_package(Threads REQUIRED)
+ENDIF()
 
 add_subdirectory(libs/libglibc-compatibility)
 include (cmake/find_unwind.cmake)
 include (cmake/find_cxx.cmake)
 
 add_library(global-group INTERFACE)
+IF(NOT APPLE)
 target_link_libraries(global-group INTERFACE
     -Wl,--start-group
     $<TARGET_PROPERTY:global-libs,INTERFACE_LINK_LIBRARIES>
     -Wl,--end-group
 )
+ELSE()
+target_link_libraries(global-group INTERFACE
+    $<TARGET_PROPERTY:global-libs,INTERFACE_LINK_LIBRARIES>
+)
+ENDIF()
 
 link_libraries(global-group)
 

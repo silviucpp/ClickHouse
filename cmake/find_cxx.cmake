@@ -45,6 +45,10 @@ if (USE_LIBCXX)
     message (STATUS "Using libcxxfs: ${LIBCXXFS_LIBRARY}")
     message (STATUS "Using libcxxabi: ${LIBCXXABI_LIBRARY}")
 else ()
+if(APPLE)
+    target_link_libraries(global-libs INTERFACE -lstdc++) # Always link these libraries as static
+else()
     target_link_libraries(global-libs INTERFACE -l:libstdc++.a -l:libstdc++fs.a) # Always link these libraries as static
     target_link_libraries(global-libs INTERFACE ${EXCEPTION_HANDLING_LIBRARY})
+endif()
 endif ()
