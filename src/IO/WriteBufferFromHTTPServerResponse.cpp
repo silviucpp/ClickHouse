@@ -4,6 +4,9 @@
 #include <IO/WriteBufferFromString.h>
 #include <IO/HTTPCommon.h>
 #include <IO/Progress.h>
+#if FL_PATCH
+#include <IO/WriteHelpers.h>
+#endif
 #include <Common/Exception.h>
 #include <Common/NetException.h>
 #include <Common/Stopwatch.h>
@@ -46,8 +49,17 @@ void WriteBufferFromHTTPServerResponse::writeHeaderSummary()
         return;
 
     WriteBufferFromOwnString progress_string_writer;
+#if FL_PATCH
+    writeCString("{\"elapsed\":", progress_string_writer);
+    writeText(elapsed_watch.elapsedSeconds(), progress_string_writer);
+    writeCString(",\"rows_read\":", progress_string_writer);
+    writeText(accumulated_progress.read_rows.load(), progress_string_writer);
+    writeCString(",\"bytes_read\":", progress_string_writer);
+    writeText(accumulated_progress.read_bytes.load(), progress_string_writer);
+    writeCString("}", progress_string_writer);
+#else
     accumulated_progress.writeJSON(progress_string_writer);
-
+#endif
     if (response_header_ostr)
         *response_header_ostr << "X-ClickHouse-Summary: " << progress_string_writer.str() << "\r\n" << std::flush;
 #endif
@@ -174,7 +186,11 @@ void WriteBufferFromHTTPServerResponse::onProgress(const Progress & progress)
 
     accumulated_progress.incrementPiecewiseAtomically(progress);
 
+#if FL_PATCH
+    if (send_progress_interval_ms && progress_watch.elapsed() >= send_progress_interval_ms * 1000000)
+#else
     if (progress_watch.elapsed() >= send_progress_interval_ms * 1000000)
+#endif
     {
         progress_watch.restart();
 
