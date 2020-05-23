@@ -70,9 +70,6 @@ private:
     Progress accumulated_progress;
     size_t send_progress_interval_ms = 100;
     Stopwatch progress_watch;
-#if FL_PATCH
-    Stopwatch elapsed_watch;
-#endif
 
     std::mutex mutex;    /// progress callback could be called from different threads.
 
